@@ -1,0 +1,77 @@
+---
+title: "Web Scraping & Text Mining"
+author: "Data Analyst Moses Kioko"
+date: "3rd  March 2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+**Libraries** 
+```{r message=FALSE, warning=FALSE}
+library(rvest) #web scrapping
+library(wordcloud2) #word cloud graph 
+library(tm) #text mining 
+library(SnowballC) #text stemming 
+library(RColorBrewer) #color palettes
+
+```
+
+1. **Web Scrapping** 
+```{r message=FALSE, warning=FALSE}
+#reading the web page 
+url="https://www.artofmanliness.com/second-inaugural-address-of-abraham-lincoln/"
+speech<-read_html(url)
+
+#grab the title 
+speech_title<-speech %>% 
+  html_node("title") %>% 
+  html_text()
+
+#grab speech text 
+speech_text<-speech %>% 
+  html_nodes("p") %>% 
+  html_text()
+```
+
+2. **Text Mining** 
+```{r message=FALSE, warning=FALSE}
+#reading the text as corpus 
+speech_text<-Corpus(VectorSource(speech_text))
+
+
+#cleaning the text 
+#1.0 lowering the text 
+text<-speech_text %>% 
+  tm_map(content_transformer(tolower)) %>% 
+  tm_map(removeNumbers) %>% 
+  tm_map(removeWords,stopwords("english")) %>% 
+  tm_map(removeWords,c("else","yet","due","see","away","ago","aom")) %>% 
+  tm_map(removePunctuation) %>% 
+  tm_map(stripWhitespace)
+  #tm_map(stemDocument)
+
+#Building term matrix document matrix
+text_matrix<-TermDocumentMatrix(text)
+text_matrix<-as.matrix(text_matrix)
+
+#sorting and summing the word frequencies 
+sort_text<-sort(rowSums(text_matrix),decreasing = TRUE)
+sort_df<-data.frame(words=names(sort_text),frequency=sort_text)
+```
+
+3. **Word-cloud Plotting** 
+```{r}
+#random
+set.seed(123)
+
+#wordcloud
+sort_df %>% 
+  wordcloud2(size = 2, 
+             fontFamily = "Comic Sans MS",
+             shuffle = "TRUE",
+             color = "random-light")
+```
+
+
+
